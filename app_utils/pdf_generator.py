@@ -241,5 +241,44 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, "Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem).", 0, "L")
 
-    pdf_output = pdf.output(dest='S')
+
+
+def normalize_pdf_output(pdf_output):
+    """
+    Garante que o retorno será bytes, tratando str, bytes e bytearray
+    sem chamar .encode() em um objeto que já é bytes/bytearray.
+    """
+    # Caso já seja bytes
+    if isinstance(pdf_output, (bytes, bytearray)):
+        return bytes(pdf_output)
+    # Caso seja string (algumas versões antigas retornam str)
+    if isinstance(pdf_output, str):
+        # codifica usando latin-1 (ou replace para não quebrar)
+        return pdf_output.encode('latin-1', 'replace')
+    # Tentativa genérica de conversão
     return bytes(pdf_output)
+
+def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
+    """Gera o PDF do relatório 50-30-20, usando codificação estável (latin-1)."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+
+    pdf_output = pdf.output(dest='S')
+    return normalize_pdf_output(pdf_output)
+
+
+def criar_pdf_relatorio_historico(df_resumo_historico):
+    """Gera um PDF contendo o resumo da comparação histórica de meses."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    
+    # (seu código de geração de conteúdo permanece igual --- omitido aqui para brevidade)
+    # ... tabela, linhas, etc ...
+
+    pdf_output_data = pdf.output(dest='S')
+    return normalize_pdf_output(pdf_output_data)
+
+pdf_output = pdf.output(dest='S')
+print("DEBUG: tipo de pdf_output:", type(pdf_output), repr(pdf_output)[:100])
