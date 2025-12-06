@@ -3,28 +3,38 @@ import pandas as pd
 import io
 # from .orcamento_class import Orcamento # Manter esta linha se for um módulo real
 
-# --- Funções de Geração de PDF Refatoradas ---
+
+# Função auxiliar para garantir que o texto seja uma string e tratado para latin-1
+def safe_text(text):
+    """
+    Tenta garantir que o objeto seja uma string e o codifica/decodifica em latin-1,
+    ignorando caracteres problemáticos para o FPDF.
+    """
+    if isinstance(text, (bytes, bytearray)):
+        # Se for bytes/bytearray, decodifica primeiro para obter a string
+        try:
+            text = text.decode('latin-1', 'ignore')
+        except:
+            text = str(text) # Falhou a decodificação, converte para string
+    
+    # Se já for string (str), codifica e decodifica para remover acentos não mapeáveis
+    try:
+        return str(text).encode('latin-1', 'ignore').decode('latin-1')
+    except:
+        return str(text)
+
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
-    Gera o PDF do relatório 50-30-20.
-    Retorna os bytes do PDF (bytestring) codificado em 'latin-1'.
+    Gera o PDF do relatório 50-30-20, usando codificação estável (latin-1).
+    Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Função auxiliar para garantir a codificação dos textos com acento
-    def safe_text(text):
-        """Tenta codificar para latin-1 e ignora erros para máxima compatibilidade no FPDF."""
-        try:
-            # Tenta codificar e decodificar para limpar caracteres problemáticos
-            return str(text).encode('latin-1', 'ignore').decode('latin-1')
-        except:
-            return str(text)
-
     # --- Títulos e Informações do Usuário ---
-    # Usando safe_text para garantir que 'Relatório' e 'Frequência' funcionem se o font/encoding permitir
+    # Usando safe_text em todos os textos variáveis
     pdf.cell(0, 10, safe_text(f"Gerencie Dindin: Relatorio {orcamento_obj.mes}"), 0, 1, "C")
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 5, safe_text(f"Gerado para: {user_name}"), 0, 1, "C")
@@ -60,8 +70,6 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     # --- DIVISÃO QUINZENAL NO PDF (Apenas se Quinzenal) ---
     if frequencia_pagamento == 'Quinzenal':
         
-        # Simulação de chamada de função que não está aqui
-        # Esta linha assume que 'orcamento_obj.calcular_divisao_quinzenal' existe e funciona
         divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites) 
         
         salario_liquido_mensal = orcamento_obj.salario_liquido
@@ -146,7 +154,9 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.cell(30, 6, safe_text("Valor"), 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
+            # A correção do erro está aqui: o tratamento de codificação é feito pela safe_text
             item_safe = safe_text(item)
+            
             pdf.cell(60, 6, item_safe, 1, 0, "L", 0) 
             pdf.cell(30, 6, f"R$ {valor:,.2f}", 1, 1, "R", 0)
         
@@ -196,7 +206,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     
     # 🎯 SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
     pdf_output = pdf.output(dest='S')
-    return pdf_output.encode('latin-1') # Retorna bytes puros
+    return pdf_output.encode('latin-1')
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
@@ -208,12 +218,7 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Função auxiliar para garantir a codificação dos textos com acento
-    def safe_text(text):
-        try:
-            return str(text).encode('latin-1', 'ignore').decode('latin-1')
-        except:
-            return str(text)
+    # --- Usa a mesma função safe_text ---
     
     # Títulos e textos da função histórica
     pdf.cell(0, 10, safe_text("Relatorio de Comparacao Historica Mensal"), 0, 1, "C")
@@ -266,6 +271,6 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-
+    # 🎯 SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
     pdf_output = pdf.output(dest='S')
     return pdf_output.encode('latin-1')
