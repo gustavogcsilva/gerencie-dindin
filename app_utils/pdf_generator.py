@@ -1,32 +1,46 @@
 from fpdf import FPDF
 import pandas as pd
 import io
-from .orcamento_class import Orcamento 
+# from .orcamento_class import Orcamento # Manter esta linha se for um módulo real
 
+# --- Funções de Geração de PDF Refatoradas ---
 
-def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
-    """Gera o PDF do relatório 50-30-20, usando codificação estável (latin-1)."""
+def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
+    """
+    Gera o PDF do relatório 50-30-20.
+    Retorna os bytes do PDF (bytestring) codificado em 'latin-1'.
+    """
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Títulos e Informações do Usuário (Usando strings sem acento para máxima compatibilidade)
-    pdf.cell(0, 10, f"Gerencie Dindin: Relatorio {orcamento_obj.mes}", 0, 1, "C")
+    # Função auxiliar para garantir a codificação dos textos com acento
+    def safe_text(text):
+        """Tenta codificar para latin-1 e ignora erros para máxima compatibilidade no FPDF."""
+        try:
+            # Tenta codificar e decodificar para limpar caracteres problemáticos
+            return str(text).encode('latin-1', 'ignore').decode('latin-1')
+        except:
+            return str(text)
+
+    # --- Títulos e Informações do Usuário ---
+    # Usando safe_text para garantir que 'Relatório' e 'Frequência' funcionem se o font/encoding permitir
+    pdf.cell(0, 10, safe_text(f"Gerencie Dindin: Relatorio {orcamento_obj.mes}"), 0, 1, "C")
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 5, f"Gerado para: {user_name}", 0, 1, "C")
-    pdf.cell(0, 5, f"Frequencia de Pagamento: {frequencia_pagamento}", 0, 1, "C")
+    pdf.cell(0, 5, safe_text(f"Gerado para: {user_name}"), 0, 1, "C")
+    pdf.cell(0, 5, safe_text(f"Frequencia de Pagamento: {frequencia_pagamento}"), 0, 1, "C")
     pdf.ln(5)
 
-    # Resumo Geral e Saldo
+    # --- Resumo Geral e Saldo ---
     pdf.set_font("Arial", "B", 12)
     pdf.set_fill_color(220, 220, 220)
-    pdf.cell(0, 7, "Resumo Geral e Saldo", 1, 1, "L", 1)
+    pdf.cell(0, 7, safe_text("Resumo Geral e Saldo"), 1, 1, "L", 1)
     
     pdf.set_font("Arial", "", 10)
-    pdf.cell(60, 5, "Salario Liquido:", 1, 0)
+    pdf.cell(60, 5, safe_text("Salario Liquido:"), 1, 0)
     pdf.cell(30, 5, f"R$ {orcamento_obj.salario_liquido:,.2f}", 1, 1, "R")
     
-    pdf.cell(60, 5, "Total Gasto/Alocado:", 1, 0)
+    pdf.cell(60, 5, safe_text("Total Gasto/Alocado:"), 1, 0)
     pdf.cell(30, 5, f"R$ {totais_reais['total_gasto_real']:,.2f}", 1, 1, "R")
     
     # Saldo Final (Destacado)
@@ -37,7 +51,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.set_text_color(0, 0, 0)
         pdf.set_font("Arial", "B", 10)
         
-    pdf.cell(60, 6, "SALDO FINAL (Salario - Total Gasto)", 1, 0, "L", 0)
+    pdf.cell(60, 6, safe_text("SALDO FINAL (Salario - Total Gasto)"), 1, 0, "L", 0)
     pdf.cell(30, 6, f"R$ {saldo:,.2f}", 1, 1, "R", 0)
     
     pdf.set_text_color(0, 0, 0) 
@@ -46,7 +60,9 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     # --- DIVISÃO QUINZENAL NO PDF (Apenas se Quinzenal) ---
     if frequencia_pagamento == 'Quinzenal':
         
-        divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites)
+        # Simulação de chamada de função que não está aqui
+        # Esta linha assume que 'orcamento_obj.calcular_divisao_quinzenal' existe e funciona
+        divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites) 
         
         salario_liquido_mensal = orcamento_obj.salario_liquido
         valor_recebido_quinzenal = salario_liquido_mensal / 2
@@ -58,15 +74,15 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         # RESUMO FINANCEIRO QUINZENAL
         pdf.set_font("Arial", "B", 13)
         pdf.set_fill_color(200, 220, 255) 
-        pdf.cell(0, 8, "Resumo de Pagamento Quinzenal", 1, 1, "C", 1)
+        pdf.cell(0, 8, safe_text("Resumo de Pagamento Quinzenal"), 1, 1, "C", 1)
         
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(95, 6, "Salario Liquido Mensal:", 1, 0, "L")
+        pdf.cell(95, 6, safe_text("Salario Liquido Mensal:"), 1, 0, "L")
         pdf.set_font("Arial", "", 10)
         pdf.cell(95, 6, f"R$ {salario_liquido_mensal:,.2f}", 1, 1, "R")
         
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(95, 6, "Valor Recebido por Quinzena:", 1, 0, "L")
+        pdf.cell(95, 6, safe_text("Valor Recebido por Quinzena:"), 1, 0, "L")
         pdf.set_font("Arial", "", 10)
         pdf.cell(95, 6, f"R$ {valor_recebido_quinzenal:,.2f}", 1, 1, "R")
         
@@ -75,21 +91,21 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         # Tabela Limite de Gastos Sugerido
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(255, 230, 200) 
-        pdf.cell(0, 6, "Limite TOTAL Sugerido para Gastos (Necessidades + Lazer)", 1, 1, "C", 1)
+        pdf.cell(0, 6, safe_text("Limite TOTAL Sugerido para Gastos (Necessidades + Lazer)"), 1, 1, "C", 1)
         
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(60, 6, "Quinzena", 1, 0, "L")
-        pdf.cell(65, 6, "Base de Calculo", 1, 0, "C")
-        pdf.cell(65, 6, "Limite Maximo de Gasto", 1, 1, "R")
+        pdf.cell(60, 6, safe_text("Quinzena"), 1, 0, "L")
+        pdf.cell(65, 6, safe_text("Base de Calculo"), 1, 0, "C")
+        pdf.cell(65, 6, safe_text("Limite Maximo de Gasto"), 1, 1, "R")
         
         pdf.set_font("Arial", "", 10)
         
-        pdf.cell(60, 6, "1a Quinzena", 1, 0, "L")
-        pdf.cell(65, 6, "60% dos Limites Mensais", 1, 0, "C")
+        pdf.cell(60, 6, safe_text("1a Quinzena"), 1, 0, "L")
+        pdf.cell(65, 6, safe_text("60% dos Limites Mensais"), 1, 0, "C")
         pdf.cell(65, 6, f"R$ {limite_gasto_primeira_quize:,.2f}", 1, 1, "R")
         
-        pdf.cell(60, 6, "2a Quinzena", 1, 0, "L")
-        pdf.cell(65, 6, "40% dos Limites Mensais", 1, 0, "C")
+        pdf.cell(60, 6, safe_text("2a Quinzena"), 1, 0, "L")
+        pdf.cell(65, 6, safe_text("40% dos Limites Mensais"), 1, 0, "C")
         pdf.cell(65, 6, f"R$ {limite_gasto_segunda_quize:,.2f}", 1, 1, "R")
 
         pdf.ln(5)
@@ -97,20 +113,20 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         # DETALHE DA DIVISÃO POR CATEGORIA (50-30-20)
         pdf.set_font("Arial", "B", 12)
         pdf.set_fill_color(255, 230, 200) 
-        pdf.cell(0, 7, "Detalhamento da Divisao por Categoria (60% / 40%)", 1, 1, "C", 1)
+        pdf.cell(0, 7, safe_text("Detalhamento da Divisao por Categoria (60% / 40%)"), 1, 1, "C", 1)
         
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(60, 6, "Categoria", 1, 0, "L")
-        pdf.cell(40, 6, "1a Parcela (60%)", 1, 0, "R")
-        pdf.cell(40, 6, "2a Parcela (40%)", 1, 1, "R")
+        pdf.cell(60, 6, safe_text("Categoria"), 1, 0, "L")
+        pdf.cell(40, 6, safe_text("1a Parcela (60%)"), 1, 0, "R")
+        pdf.cell(40, 6, safe_text("2a Parcela (40%)"), 1, 1, "R")
         
         pdf.set_font("Arial", "", 10)
         
-        pdf.cell(60, 6, "Necessidades (50%)", 1, 0, "L")
+        pdf.cell(60, 6, safe_text("Necessidades (50%)"), 1, 0, "L")
         pdf.cell(40, 6, f"R$ {divisao_quinzenal['Fixas - Início (60%)']:,.2f}", 1, 0, "R")
         pdf.cell(40, 6, f"R$ {divisao_quinzenal['Fixas - Meio (40%)']:,.2f}", 1, 1, "R")
         
-        pdf.cell(60, 6, "Desejos/Lazer (30%)", 1, 0, "L")
+        pdf.cell(60, 6, safe_text("Desejos/Lazer (30%)"), 1, 0, "L")
         pdf.cell(40, 6, f"R$ {divisao_quinzenal['Lazer - Início (60%)']:,.2f}", 1, 0, "R")
         pdf.cell(40, 6, f"R$ {divisao_quinzenal['Lazer - Meio (40%)']:,.2f}", 1, 1, "R")
         
@@ -122,26 +138,21 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     def adicionar_secao(titulo, total_real, limite, despesas, cor_limite):
         pdf.set_fill_color(*cor_limite)
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 7, f"{titulo} (Limite: R$ {limite:,.2f})", 1, 1, "L", 1)
+        pdf.cell(0, 7, safe_text(f"{titulo} (Limite: R$ {limite:,.2f})"), 1, 1, "L", 1)
         pdf.set_font("Arial", "", 10)
         
         # Tabela de Despesas
-        pdf.cell(60, 6, "Item", 1, 0, "L", 0)
-        pdf.cell(30, 6, "Valor", 1, 1, "R", 0)
+        pdf.cell(60, 6, safe_text("Item"), 1, 0, "L", 0)
+        pdf.cell(30, 6, safe_text("Valor"), 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
-            # Codificação segura para itens
-            try:
-                item_safe = item.encode('latin-1', 'ignore').decode('latin-1')
-            except Exception:
-                item_safe = item
-                
+            item_safe = safe_text(item)
             pdf.cell(60, 6, item_safe, 1, 0, "L", 0) 
             pdf.cell(30, 6, f"R$ {valor:,.2f}", 1, 1, "R", 0)
         
         # Linha do Total
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(60, 6, "TOTAL GASTO", 1, 0, "L", 0)
+        pdf.cell(60, 6, safe_text("TOTAL GASTO"), 1, 0, "L", 0)
         pdf.cell(30, 6, f"R$ {total_real:,.2f}", 1, 1, "R", 0)
         pdf.ln(7)
 
@@ -151,12 +162,12 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
             pdf.set_text_color(255, 0, 0)
             ultrapassado = total_real - limite
             pdf.set_font("Arial", "B", 10)
-            pdf.cell(0, 6, f"ATENCAO: Voce ULTRAPASSOU o limite em R$ {ultrapassado:,.2f}!", 1, 1, "C", 1)
+            pdf.cell(0, 6, safe_text(f"ATENCAO: Voce ULTRAPASSOU o limite em R$ {ultrapassado:,.2f}!"), 1, 1, "C", 1)
         elif total_real < limite:
             pdf.set_text_color(0, 128, 0)
             economizado = limite - total_real
             pdf.set_font("Arial", "", 10)
-            pdf.cell(0, 6, f"Parabens! Voce economizou R$ {economizado:,.2f} nesta categoria.", 0, 1, "C", 0)
+            pdf.cell(0, 6, safe_text(f"Parabens! Voce economizou R$ {economizado:,.2f} nesta categoria."), 0, 1, "C", 0)
         
         pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
@@ -169,56 +180,69 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_fill_color(255, 255, 153)
     pdf.set_font("Arial", "B", 12)
     meta_poupanca = limites.get('Poupança/Investimento (20%)', 0.0)
-    pdf.cell(0, 7, f"20% Poupanca/Investimento (Meta: R$ {meta_poupanca:,.2f})", 1, 1, "L", 1)
+    pdf.cell(0, 7, safe_text(f"20% Poupanca/Investimento (Meta: R$ {meta_poupanca:,.2f})"), 1, 1, "L", 1)
     total_poupanca = totais_reais['total_poupanca']
     pdf.set_font("Arial", "", 10)
-    pdf.cell(60, 6, "Valor Destinado", 1, 0, "L", 0)
+    pdf.cell(60, 6, safe_text("Valor Destinado"), 1, 0, "L", 0)
     pdf.cell(30, 6, f"R$ {total_poupanca:,.2f}", 1, 1, "R", 0)
 
     if total_poupanca < meta_poupanca:
         pdf.set_text_color(255, 0, 0)
         falta = meta_poupanca - total_poupanca
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(0, 6, f"Atencao: Voce esta R$ {falta:,.2f} abaixo da meta de 20%!", 1, 1, "C", 1)
+        pdf.cell(0, 6, safe_text(f"Atencao: Voce esta R$ {falta:,.2f} abaixo da meta de 20%!"), 1, 1, "C", 1)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # 🎯 SAÍDA FINAL SEGURA COM io.BytesIO
+    # 🎯 SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
     pdf_output = pdf.output(dest='S')
-    return io.BytesIO(pdf_output.encode('latin-1')).getvalue()
+    return pdf_output.encode('latin-1') # Retorna bytes puros
 
-def criar_pdf_relatorio_historico(df_resumo_historico):
-    """Gera um PDF contendo o resumo da comparação histórica de meses."""
+
+def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
+    """
+    Gera um PDF contendo o resumo da comparação histórica de meses.
+    Retorna os bytes do PDF (bytestring) codificado em 'latin-1'.
+    """
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Títulos e textos da função histórica (Mantido)
-    pdf.cell(0, 10, "Relatorio de Comparacao Historica Mensal", 0, 1, "C")
+    # Função auxiliar para garantir a codificação dos textos com acento
+    def safe_text(text):
+        try:
+            return str(text).encode('latin-1', 'ignore').decode('latin-1')
+        except:
+            return str(text)
+    
+    # Títulos e textos da função histórica
+    pdf.cell(0, 10, safe_text("Relatorio de Comparacao Historica Mensal"), 0, 1, "C")
     pdf.ln(5)
     
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 10, "Resumo Comparativo de Gastos e Economia (50-30-20)", 0, 1, "L")
+    pdf.cell(0, 10, safe_text("Resumo Comparativo de Gastos e Economia (50-30-20)"), 0, 1, "L")
     pdf.ln(2)
     
     col_widths = [25, 35, 30, 30, 30]
     
+    # Cabeçalho da Tabela
     pdf.set_fill_color(200, 220, 255)
     pdf.set_font("Arial", "B", 10)
-    pdf.cell(col_widths[0], 7, "Mes", 1, 0, "C", 1)
-    pdf.cell(col_widths[1], 7, "Salario Liquido", 1, 0, "R", 1)
-    pdf.cell(col_widths[2], 7, "Total Gasto", 1, 0, "R", 1)
-    pdf.cell(col_widths[3], 7, "Folga Necessidades", 1, 0, "R", 1)
-    pdf.cell(col_widths[4], 7, "Folga Lazer", 1, 1, "R", 1)
+    pdf.cell(col_widths[0], 7, safe_text("Mes"), 1, 0, "C", 1)
+    pdf.cell(col_widths[1], 7, safe_text("Salario Liquido"), 1, 0, "R", 1)
+    pdf.cell(col_widths[2], 7, safe_text("Total Gasto"), 1, 0, "R", 1)
+    pdf.cell(col_widths[3], 7, safe_text("Folga Necessidades"), 1, 0, "R", 1)
+    pdf.cell(col_widths[4], 7, safe_text("Folga Lazer"), 1, 1, "R", 1)
     
     pdf.set_font("Arial", "", 9)
     for index, row in df_resumo_historico.iterrows():
-        mes = index
+        mes = safe_text(index)
         salario = f"R$ {row['Salário Líquido']:,.2f}"
         gasto = f"R$ {row['Total Gasto']:,.2f}"
         folga_fixas = f"R$ {row['Folga/Déficit Necessidades']:,.2f}"
         folga_lazer = f"R$ {row['Folga/Déficit Lazer']:,.2f}"
         
+        # Lógica de cores para Folga Necessidades
         if row['Folga/Déficit Necessidades'] < 0: pdf.set_text_color(255, 0, 0)
         elif row['Folga/Déficit Necessidades'] > 0: pdf.set_text_color(0, 128, 0)
         else: pdf.set_text_color(0, 0, 0)
@@ -228,6 +252,7 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
         pdf.cell(col_widths[2], 6, gasto, 1, 0, "R", 0)
         pdf.cell(col_widths[3], 6, folga_fixas, 1, 0, "R", 0)
         
+        # Lógica de cores para Folga Lazer
         if row['Folga/Déficit Lazer'] < 0: pdf.set_text_color(255, 0, 0)
         elif row['Folga/Déficit Lazer'] > 0: pdf.set_text_color(0, 128, 0)
         else: pdf.set_text_color(0, 0, 0)
@@ -239,46 +264,8 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     pdf.ln(10)
     
     pdf.set_font("Arial", "", 8)
-    pdf.multi_cell(0, 4, "Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem).", 0, "L")
+    pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-
-
-def normalize_pdf_output(pdf_output):
-    """
-    Garante que o retorno será bytes, tratando str, bytes e bytearray
-    sem chamar .encode() em um objeto que já é bytes/bytearray.
-    """
-    # Caso já seja bytes
-    if isinstance(pdf_output, (bytes, bytearray)):
-        return bytes(pdf_output)
-    # Caso seja string (algumas versões antigas retornam str)
-    if isinstance(pdf_output, str):
-        # codifica usando latin-1 (ou replace para não quebrar)
-        return pdf_output.encode('latin-1', 'replace')
-    # Tentativa genérica de conversão
-    return bytes(pdf_output)
-
-def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
-    """Gera o PDF do relatório 50-30-20, usando codificação estável (latin-1)."""
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
 
     pdf_output = pdf.output(dest='S')
-    return normalize_pdf_output(pdf_output)
-
-
-def criar_pdf_relatorio_historico(df_resumo_historico):
-    """Gera um PDF contendo o resumo da comparação histórica de meses."""
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    
-    # (seu código de geração de conteúdo permanece igual --- omitido aqui para brevidade)
-    # ... tabela, linhas, etc ...
-
-    pdf_output_data = pdf.output(dest='S')
-    return normalize_pdf_output(pdf_output_data)
-
-pdf_output = pdf.output(dest='S')
-print("DEBUG: tipo de pdf_output:", type(pdf_output), repr(pdf_output)[:100])
+    return pdf_output.encode('latin-1')
