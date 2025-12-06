@@ -1,5 +1,5 @@
 streamlit
 pandas
-fpdf
 plotly
 kaleido
+fpdf2
