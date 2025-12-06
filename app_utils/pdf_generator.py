@@ -193,7 +193,7 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Títulos e textos da função histórica (Mantido)
+    # Títulos e textos da função histórica
     pdf.cell(0, 10, "Relatorio de Comparacao Historica Mensal", 0, 1, "C")
     pdf.ln(5)
     
@@ -214,6 +214,8 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     pdf.set_font("Arial", "", 9)
     for index, row in df_resumo_historico.iterrows():
         mes = index
+        # Nota: Presume-se que o df_resumo_historico está com os nomes das colunas corretos.
+        # Estamos usando valores do DataFrame, que são strings formatadas.
         salario = f"R$ {row['Salário Líquido']:,.2f}"
         gasto = f"R$ {row['Total Gasto']:,.2f}"
         folga_fixas = f"R$ {row['Folga/Déficit Necessidades']:,.2f}"
@@ -240,10 +242,13 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, "Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem).", 0, "L")
-
+    
+    # 🎯 CORREÇÃO FINAL SEGURA (TRATANDO bytearray/bytes)
+    # Garante que o retorno é uma string decodificável antes de re-codificar para o buffer.
     pdf_output_data = pdf.output(dest='S')
     
-
+    # 1. Decodifica o bytearray/bytes para str (usando latin-1 para ignorar acentos que quebram)
+    #    E então, codifica a string limpa de volta para bytes no buffer.
     pdf_output_str = pdf_output_data.decode('latin-1', 'ignore') 
     
     return io.BytesIO(pdf_output_str.encode('latin-1')).getvalue()
