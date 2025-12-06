@@ -1,15 +1,13 @@
-# app_views/main_app_view.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from app_utils.state_manager import logout, salvar_orcamento_atual, atualizar_orcamento_do_selectbox, adicionar_gasto
 from app_utils.orcamento_class import Orcamento
 from app_utils.pdf_generator import criar_pdf_relatorio, criar_pdf_relatorio_historico
-from .dashboard_view import criar_dashboard_historico 
+from .dashboard_view import criar_dashboard_historico
 
 def MainAppView():
-    # ... (O código desta função é o último que você forneceu. Deve estar correto
-    # assumindo que as funções utilitárias estão salvas nos arquivos certos.) ...
+
 
     st.title("💰 Gerenciador de Orçamento 50-30-20 Histórico")
     
@@ -26,7 +24,7 @@ def MainAppView():
     saldo = st.session_state.salario_liquido
     df_historico_geral = pd.DataFrame() 
     
-    # ... (Resto do código da MainAppView mantido como na última revisão) ...
+
 
     # --- 1. Entrada de Dados Principais e Seleção de Mês ---
     st.header("1. 📝 Configuração Inicial e Seleção")
@@ -176,14 +174,13 @@ def MainAppView():
             )
             if total_poupanca >= meta_poupanca: st.success(f"Excelente! Você atingiu ou superou a meta de poupança (R$ {total_poupanca:,.2f}).")
             else: st.warning(f"Atenção: Você está R$ {meta_poupanca - total_poupanca:,.2f} abaixo da meta ideal de 20%.")
-                
-        # 4. Dashboard Histórico e Economia (Mantido)
+        
+
         with tab_historico:
             df_historico_geral = criar_dashboard_historico() 
 
         st.markdown("---")
 
-        # 3. Relatório Geral e Dashboard ATUAL (Mantido)
         st.header("3. 📈 Relatório Final do Mês")
         
         col_resumo_salario, col_resumo_alocado, col_resumo_saldo = st.columns(3)
@@ -191,7 +188,6 @@ def MainAppView():
         with col_resumo_alocado: st.metric("Total Alocado/Gasto", f"R$ {total_gasto_real:,.2f}")
         with col_resumo_saldo: st.metric("Saldo Restante", f"R$ {saldo:,.2f}", delta_color=("inverse" if saldo < 0 else "normal"))
 
-        # Gráfico Plotly na aplicação (Mantido)
         df_grafico = pd.DataFrame({
             'Categoria': ['Necessidades (50%)', 'Desejos/Lazer (30%)', 'Poupança/Investimento (20%)'],
             'Ideal': [limites.get('Necessidades (50%)'), limites.get('Desejos/Lazer (30%)'), limites.get('Poupança/Investimento (20%)')],
@@ -202,7 +198,6 @@ def MainAppView():
         fig.update_traces(texttemplate='R$ %{text:,.2f}', textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
 
-    # GERAÇÃO DO PDF E BOTÃO DE DOWNLOAD (Relatório Individual)
     user_name = st.session_state.get('user_name', 'Usuário Desconhecido') 
     frequencia_pagamento = st.session_state.get('frequencia_pagamento', 'N/A')
 

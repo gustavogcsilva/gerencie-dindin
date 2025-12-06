@@ -1,7 +1,6 @@
 # app.py
 import streamlit as st
-import pandas as pd # Mantido para garantir que o Streamlit carregue o ambiente corretamente
-# Importa o controlador de estado e as views
+import pandas as pd
 from app_utils.state_manager import inicializar_estado
 from app_views.auth_views import tela_login, tela_cadastro
 from app_views.main_app_view import MainAppView
