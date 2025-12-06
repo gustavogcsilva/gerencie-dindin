@@ -240,4 +240,4 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, "Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem).", 0, "L")
     
-    return bytes(pdf.output(dest='S').encode('latin-1'))
+    return pdf.output(dest='S').encode('latin-1')
