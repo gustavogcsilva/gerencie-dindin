@@ -1,0 +1,13 @@
+# .streamlit/config.toml
+
+[theme]
+# Cor principal de destaque (roxo/rosa)
+primaryColor="#BD93F9" 
+# Cor de fundo da página principal (fundo escuro - "Dracula Background")
+backgroundColor="#282A36" 
+# Cor de fundo secundária (barra lateral e inputs - "Dracula Current Line")
+secondaryBackgroundColor="#44475A" 
+# Cor do texto principal (branco/cinza claro)
+textColor="#F8F8F2" 
+# Fonte (opcional)
+# font="sans serif"
