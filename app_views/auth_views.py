@@ -1,6 +1,4 @@
-# app_views/auth_views.py
 import streamlit as st
-# Importa o logout do state_manager (importação absoluta)
 from app_utils.state_manager import logout
 
 def tela_cadastro():
