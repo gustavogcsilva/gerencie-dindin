@@ -180,13 +180,11 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.set_text_color(255, 0, 0)
         falta = meta_poupanca - total_poupanca
         pdf.set_font("Arial", "B", 10)
-        # ⚠️ Linha corrigida aqui também para evitar SyntaxError
         pdf.cell(0, 6, f"Atencao: Voce esta R$ {falta:,.2f} abaixo da meta de 20%!", 1, 1, "C", 1)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    return bytes(pdf.output(dest='S').encode('latin-1'))
-
+    return pdf.output(dest='S')
 
 def criar_pdf_relatorio_historico(df_resumo_historico):
     """Gera um PDF contendo o resumo da comparação histórica de meses."""
