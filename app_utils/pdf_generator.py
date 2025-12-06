@@ -10,7 +10,7 @@ def safe_text(text):
     ignorando erros e tratando objetos binários (bytes/bytearray) de forma robusta.
     """
     # 1. Converte qualquer objeto de entrada para string (str) de maneira segura
-    if isinstance(text, (bytes, bytearray)):
+    if isinstance(text, (bytes)):
         try:
             # Tenta decodificar o objeto binário para string usando latin-1 (se vier do FPDF)
             text = text.decode('latin-1', 'ignore')
