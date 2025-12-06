@@ -201,24 +201,55 @@ def MainAppView():
     user_name = st.session_state.get('user_name', 'Usuário Desconhecido') 
     frequencia_pagamento = st.session_state.get('frequencia_pagamento', 'N/A')
 
+    # A variável meu_orcamento é criada e os totais são calculados APENAS dentro do bloco ELSE
     if meu_orcamento and meu_orcamento.salario_liquido > 0:
-        totais_reais = {'total_fixas': total_fixas, 'total_lazer': total_lazer, 'total_poupanca': total_poupanca, 'total_gasto_real': total_gasto_real}
+        totais_reais = {
+            # Recalcula totais *dentro* deste bloco, garantindo que as variáveis existam
+            'total_fixas': meu_orcamento.calcular_total_categoria('fixas'),
+            'total_lazer': meu_orcamento.calcular_total_categoria('lazer'),
+            'total_poupanca': meu_orcamento.calcular_total_categoria('poupanca'),
+            'total_gasto_real': meu_orcamento.calcular_total_categoria('fixas') + meu_orcamento.calcular_total_categoria('lazer') + meu_orcamento.calcular_total_categoria('poupanca')
+        }
+        # Saldo também precisa ser recalculado com base nos valores atualizados
+        saldo_recalculado = meu_orcamento.salario_liquido - totais_reais['total_gasto_real']
 
-        pdf_data = criar_pdf_relatorio(
-            meu_orcamento, limites, totais_reais, saldo, user_name, frequencia_pagamento
-        )
 
-        st.download_button(
-            label="⬇️ Baixar Relatório Mensal em PDF", data=pdf_data,
-            file_name=f"Relatorio_Orcamento_{st.session_state.mes_selecionado}.pdf",
-            mime="application/pdf"
-        )
+        try:
+            # 1. GERAÇÃO DOS DADOS BINÁRIOS
+            pdf_data = criar_pdf_relatorio(
+                meu_orcamento, 
+                limites, # Limites já definidos no bloco else
+                totais_reais, 
+                saldo_recalculado,
+                user_name, 
+                frequencia_pagamento
+            )
+            
+            # 2. CHAMADA DO BOTÃO APENAS SE A GERAÇÃO FOI BEM-SUCEDIDA
+            st.download_button(
+                label="⬇️ Baixar Relatório Mensal em PDF",
+                data=pdf_data, # pdf_data agora é garantidamente válido
+                file_name=f"Relatorio_Orcamento_{st.session_state.mes_selecionado}.pdf",
+                mime="application/pdf"
+            )
+            
+        except Exception as e:
+            # Captura erros de FPDF/codificação que ocorrem no Cloud
+            st.error(f"Erro ao gerar PDF: {e}")
+            st.info("Verifique se há acentos ou caracteres especiais em nomes de itens, apesar das correções de codificação.")
 
-    # GERAÇÃO DO PDF E BOTÃO DE DOWNLOAD (Relatório Histórico)
-    if not df_historico_geral.empty:
-        pdf_data_historico = criar_pdf_relatorio_historico(df_historico_geral)
-        st.download_button(
-            label="⬇️ Baixar Relatório de Comparação Histórica em PDF",
-            data=pdf_data_historico, file_name="Relatorio_Comparacao_Historica.pdf",
-            mime="application/pdf"
-        )
+
+    # NOVO: GERAÇÃO DO PDF E BOTÃO DE DOWNLOAD (Relatório Histórico)
+    # df_historico_geral foi definido no bloco else. Usamos uma verificação segura.
+    if 'df_historico_geral' in locals() and not df_historico_geral.empty:
+        # A função criar_pdf_relatorio_historico precisa ser chamada aqui
+        try:
+            pdf_data_historico = criar_pdf_relatorio_historico(df_historico_geral)
+            st.download_button(
+                label="⬇️ Baixar Relatório de Comparação Histórica em PDF",
+                data=pdf_data_historico,
+                file_name="Relatorio_Comparacao_Historica.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.error(f"Erro ao gerar PDF Histórico: {e}")
