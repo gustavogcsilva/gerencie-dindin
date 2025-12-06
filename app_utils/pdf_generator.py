@@ -11,7 +11,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Títulos e Informações do Usuário
+    # Títulos e Informações do Usuário (Usando strings sem acento para máxima compatibilidade)
     pdf.cell(0, 10, f"Gerencie Dindin: Relatorio {orcamento_obj.mes}", 0, 1, "C")
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 5, f"Gerado para: {user_name}", 0, 1, "C")
@@ -180,11 +180,11 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.set_text_color(255, 0, 0)
         falta = meta_poupanca - total_poupanca
         pdf.set_font("Arial", "B", 10)
-        pdf.cell(0, 6, f"Atencao: Voce esta R$ {falta:,.2f} abaixo da meta de 20%."), 1, 1, "C", 1)
+        # ⚠️ Linha corrigida aqui também para evitar SyntaxError
+        pdf.cell(0, 6, f"Atencao: Voce esta R$ {falta:,.2f} abaixo da meta de 20%!", 1, 1, "C", 1)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # CORREÇÃO CHAVE: Usar latin-1 na saída
     return bytes(pdf.output(dest='S').encode('latin-1'))
 
 
@@ -194,7 +194,8 @@ def criar_pdf_relatorio_historico(df_resumo_historico):
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    pdf.cell(0, 10, "Relatório de Comparação Histórica Mensal", 0, 1, "C")
+    # Títulos e textos da função histórica também devem ser corrigidos
+    pdf.cell(0, 10, "Relatorio de Comparacao Historica Mensal", 0, 1, "C")
     pdf.ln(5)
     
     pdf.set_font("Arial", "B", 12)
