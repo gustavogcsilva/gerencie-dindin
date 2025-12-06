@@ -1,31 +1,35 @@
 from fpdf import FPDF
 import pandas as pd
 import io
-# from .orcamento_class import Orcamento # Manter esta linha se for um módulo real
+# from .orcamento_class import Orcamento 
 
-# --- Função de Codificação Corrigida ---
+
 def safe_text(text):
     """
-    Garante que o objeto seja uma string (decodifica se for bytes/bytearray) 
-    e a prepara para o FPDF usando latin-1, ignorando erros.
+    Garante que o objeto seja uma string (str) e o prepara para o FPDF usando latin-1,
+    ignorando erros e tratando objetos binários (bytes/bytearray) de forma robusta.
     """
-    # 1. Verifica se a entrada é um objeto binário e decodifica para string (str)
+    # 1. Converte qualquer objeto de entrada para string (str) de maneira segura
     if isinstance(text, (bytes, bytearray)):
         try:
-            # Tenta decodificar de latin-1
+            # Tenta decodificar o objeto binário para string usando latin-1 (se vier do FPDF)
             text = text.decode('latin-1', 'ignore')
         except:
-            # Se a decodificação falhar, força para string.
-            text = str(text) 
-    
-    # 2. Agora que temos uma string (str), aplicamos a limpeza de caracteres,
+            # Se a decodificação falhar (ex: objeto binário não tem encoding latin-1),
+            # força a conversão para string.
+            text = str(text)
+    else:
+        # Se não for binário, apenas garante que é uma string
+        text = str(text)
+
+    # 2. Agora que temos certeza de que é uma string (str), aplicamos a limpeza
     # codificando e decodificando de volta para 'str' (latin-1) para o FPDF.
     try:
-        return str(text).encode('latin-1', 'ignore').decode('latin-1')
+        # Codifica para bytes (latin-1) e depois decodifica de volta para string (str)
+        return text.encode('latin-1', 'ignore').decode('latin-1')
     except:
-        return str(text) # Caso algo dê errado, retorna a string original
+        return text # Em caso de falha, retorna a string já convertida.
 
-# --- Funções de Geração de PDF Corrigidas ---
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
@@ -36,14 +40,14 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     
-    # Títulos e Informações do Usuário 
+    # --- Títulos e Informações do Usuário ---
     pdf.cell(0, 10, safe_text(f"Gerencie Dindin: Relatorio {orcamento_obj.mes}"), 0, 1, "C")
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 5, safe_text(f"Gerado para: {user_name}"), 0, 1, "C")
     pdf.cell(0, 5, safe_text(f"Frequencia de Pagamento: {frequencia_pagamento}"), 0, 1, "C")
     pdf.ln(5)
 
-    # Resumo Geral e Saldo
+    # --- Resumo Geral e Saldo ---
     pdf.set_font("Arial", "B", 12)
     pdf.set_fill_color(220, 220, 220)
     pdf.cell(0, 7, safe_text("Resumo Geral e Saldo"), 1, 1, "L", 1)
@@ -156,7 +160,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.cell(30, 6, safe_text("Valor"), 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
-            # Usando safe_text para garantir que 'item' seja uma string tratada
+            # A correção do erro está aqui: o tratamento de codificação é feito pela safe_text
             item_safe = safe_text(item)
             
             pdf.cell(60, 6, item_safe, 1, 0, "L", 0) 
@@ -241,7 +245,8 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     
     pdf.set_font("Arial", "", 9)
     for index, row in df_resumo_historico.iterrows():
-        mes = safe_text(index) # Usa safe_text para o índice (nome do mês)
+        # Usando safe_text para garantir que 'index' (nome do mês) seja string tratada
+        mes = safe_text(index) 
         salario = f"R$ {row['Salário Líquido']:,.2f}"
         gasto = f"R$ {row['Total Gasto']:,.2f}"
         folga_fixas = f"R$ {row['Folga/Déficit Necessidades']:,.2f}"
