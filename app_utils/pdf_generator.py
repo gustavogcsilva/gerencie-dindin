@@ -1,4 +1,3 @@
-# app_utils/pdf_generator.py
 from fpdf import FPDF
 import pandas as pd
 import io
@@ -131,7 +130,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.cell(30, 6, "Valor", 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
-            # Usando try/except para codificação segura para latin-1
+            # Codificação segura para itens
             try:
                 item_safe = item.encode('latin-1', 'ignore').decode('latin-1')
             except Exception:
@@ -184,7 +183,9 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    return pdf.output(dest='S')
+    # 🎯 SAÍDA FINAL SEGURA COM io.BytesIO
+    pdf_output = pdf.output(dest='S')
+    return io.BytesIO(pdf_output.encode('latin-1')).getvalue()
 
 def criar_pdf_relatorio_historico(df_resumo_historico):
     """Gera um PDF contendo o resumo da comparação histórica de meses."""
