@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-# Importe as funções corrigidas do seu módulo
 from pdf_generator import criar_pdf_relatorio 
 
 # --- IMPORTANTE: Estrutura de Cache para garantir que o PDF seja gerado uma única vez ---
