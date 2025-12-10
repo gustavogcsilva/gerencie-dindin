@@ -6,29 +6,22 @@ import io
 
 def safe_text(text):
     """
-    Garante que o objeto seja uma string (str) e o prepara para o FPDF usando latin-1,
+    Garanta que o objeto seja uma string (str) e o prepara para o FPDF usando latin-1,
     ignorando erros e tratando objetos binários (bytes/bytearray) de forma robusta.
     """
-    # 1. Converte qualquer objeto de entrada para string (str) de maneira segura
-    if isinstance(text, (bytes)):
-        try:
-            # Tenta decodificar o objeto binário para string usando latin-1 (se vier do FPDF)
-            text = text.decode('latin-1', 'ignore')
-        except:
-            # Se a decodificação falhar (ex: objeto binário não tem encoding latin-1),
-            # força a conversão para string.
-            text = str(text)
+    # 1. Garante que a entrada é uma string (str)
+    if isinstance(text, (bytes, bytearray)):
+        # Decodifica binário para string, ignorando erros (usando latin-1 para fpdf)
+        text = text.decode('latin-1', 'ignore') 
     else:
-        # Se não for binário, apenas garante que é uma string
-        text = str(text)
+        # Garante que qualquer outro tipo (int, float, etc.) vire string
+        text = str(text) 
 
-    # 2. Agora que temos certeza de que é uma string (str), aplicamos a limpeza
-    # codificando e decodificando de volta para 'str' (latin-1) para o FPDF.
+    # 2. Codifica para bytes (latin-1) e decodifica de volta para string (str)
     try:
-        # Codifica para bytes (latin-1) e depois decodifica de volta para string (str)
         return text.encode('latin-1', 'ignore').decode('latin-1')
     except:
-        return text # Em caso de falha, retorna a string já convertida.
+        return text
 
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
@@ -76,13 +69,20 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     # --- DIVISÃO QUINZENAL NO PDF (Apenas se Quinzenal) ---
     if frequencia_pagamento == 'Quinzenal':
         
-        divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites) 
+        # O cálculo de divisao_quinzenal deve ser feito pelo orcamento_obj.calcular_divisao_quinzenal(limites)
+        # Assumindo que o método existe e retorna o dicionário esperado
+        try:
+            divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites)
+        except AttributeError:
+            # Caso a classe Orcamento não esteja disponível (comentada no import)
+            divisao_quinzenal = {} 
         
         salario_liquido_mensal = orcamento_obj.salario_liquido
         valor_recebido_quinzenal = salario_liquido_mensal / 2
         
-        limite_gasto_primeira_quize = divisao_quinzenal['Fixas - Início (60%)'] + divisao_quinzenal['Lazer - Início (60%)']
-        limite_gasto_segunda_quize = divisao_quinzenal['Fixas - Meio (40%)'] + divisao_quinzenal['Lazer - Meio (40%)']
+        # Ajuste para caso divisao_quinzenal não tenha sido calculada
+        limite_gasto_primeira_quize = divisao_quinzenal.get('Fixas - Início (60%)', 0.0) + divisao_quinzenal.get('Lazer - Início (60%)', 0.0)
+        limite_gasto_segunda_quize = divisao_quinzenal.get('Fixas - Meio (40%)', 0.0) + divisao_quinzenal.get('Lazer - Meio (40%)', 0.0)
         
         
         # RESUMO FINANCEIRO QUINZENAL
@@ -136,13 +136,19 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         
         pdf.set_font("Arial", "", 10)
         
+        # Ajuste para caso divisao_quinzenal não tenha sido calculada
+        fixas_inicio = divisao_quinzenal.get('Fixas - Início (60%)', 0.0)
+        fixas_meio = divisao_quinzenal.get('Fixas - Meio (40%)', 0.0)
+        lazer_inicio = divisao_quinzenal.get('Lazer - Início (60%)', 0.0)
+        lazer_meio = divisao_quinzenal.get('Lazer - Meio (40%)', 0.0)
+        
         pdf.cell(60, 6, safe_text("Necessidades (50%)"), 1, 0, "L")
-        pdf.cell(40, 6, f"R$ {divisao_quinzenal['Fixas - Início (60%)']:,.2f}", 1, 0, "R")
-        pdf.cell(40, 6, f"R$ {divisao_quinzenal['Fixas - Meio (40%)']:,.2f}", 1, 1, "R")
+        pdf.cell(40, 6, f"R$ {fixas_inicio:,.2f}", 1, 0, "R")
+        pdf.cell(40, 6, f"R$ {fixas_meio:,.2f}", 1, 1, "R")
         
         pdf.cell(60, 6, safe_text("Desejos/Lazer (30%)"), 1, 0, "L")
-        pdf.cell(40, 6, f"R$ {divisao_quinzenal['Lazer - Início (60%)']:,.2f}", 1, 0, "R")
-        pdf.cell(40, 6, f"R$ {divisao_quinzenal['Lazer - Meio (40%)']:,.2f}", 1, 1, "R")
+        pdf.cell(40, 6, f"R$ {lazer_inicio:,.2f}", 1, 0, "R")
+        pdf.cell(40, 6, f"R$ {lazer_meio:,.2f}", 1, 1, "R")
         
         pdf.ln(7)
     # --- FIM DA DIVISÃO QUINZENAL NO PDF ---
@@ -210,9 +216,14 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
-    pdf_output = pdf.output(dest='S')
-    return pdf_output.encode('latin-1')
+    # SAÍDA FINAL SEGURA
+    pdf_output = pdf.output(dest='S') # dest='S' ou 'B'
+    
+    # CORREÇÃO PRINCIPAL: Garante que o retorno seja bytes sem tentar re-encode em objeto binário
+    if isinstance(pdf_output, (bytes, bytearray)):
+        return bytes(pdf_output) # Retorna bytes
+    else:
+        return pdf_output.encode('latin-1') # Se for string (caso improvável na versão moderna), codifica
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
@@ -276,6 +287,11 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-    # SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
+    # SAÍDA FINAL SEGURA
     pdf_output = pdf.output(dest='S')
-    return pdf_output.encode('latin-1')
+    
+    # CORREÇÃO PRINCIPAL: Garante que o retorno seja bytes sem tentar re-encode em objeto binário
+    if isinstance(pdf_output, (bytes, bytearray)):
+        return bytes(pdf_output) # Retorna bytes
+    else:
+        return pdf_output.encode('latin-1') # Se for string, codifica
