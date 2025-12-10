@@ -1,13 +1,14 @@
-from fpdf import FPDF # <-- MANTENDO FPDF, mas assumindo que usa fpdf2 por baixo
+from fpdf import FPDF
 import pandas as pd
 import io
+import streamlit as st
 import safe_text
-# from .orcamento_class import Orcamento 
+
 
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
-    Gera o PDF do relatório 50-30-20, usando codificação estável (latin-1).
+    Gera o PDF do relatório 50-30-20.
     Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
@@ -134,7 +135,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.cell(30, 6, safe_text("Valor"), 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
-            # A correção do erro está aqui: o tratamento de codificação é feito pela safe_text
+            # O uso de safe_text(item) ja garante a codificação correta
             item_safe = safe_text(item)
             
             pdf.cell(60, 6, item_safe, 1, 0, "L", 0) 
@@ -184,15 +185,21 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
+    # SAÍDA FINAL SEGURA COM BYTES PURAS (APENAS output(dest='S'))
     pdf_output = pdf.output(dest='S')
-    return pdf_output.encode('latin-1')
+    # O fpdf2 geralmente retorna str, entao codificamos para bytes binarios
+    # Se você estiver usando fpdf2, a linha abaixo é a mais segura:
+    if isinstance(pdf_output, str):
+        return pdf_output.encode('latin-1') 
+    
+    # Se ja for bytes, retorna direto
+    return pdf_output 
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     """
     Gera um PDF contendo o resumo da comparação histórica de meses.
-    Retorna os bytes do PDF (bytestring) codificado em 'latin-1'.
+    Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
     pdf.add_page()
@@ -250,6 +257,11 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-    # SAÍDA FINAL SEGURA COM BYTES PURAS (latin-1)
+    # SAÍDA FINAL SEGURA COM BYTES PURAS (APENAS output(dest='S'))
     pdf_output = pdf.output(dest='S')
-    return pdf_output.encode('latin-1')
+    # O fpdf2 geralmente retorna str, entao codificamos para bytes binarios
+    if isinstance(pdf_output, str):
+        return pdf_output.encode('latin-1') 
+    
+    # Se ja for bytes, retorna direto
+    return pdf_output
