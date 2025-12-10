@@ -64,8 +64,8 @@ def input_despesas(titulo, default_data={'Item 1': 0.0}):
     for index, row in edited_df.iterrows():
         # Apenas inclui linhas com item e valor > 0
         if row['Item'] and row['Valor'] is not None and row['Valor'] > 0:
-             despesas[row['Item']] = row['Valor']
-             
+            despesas[row['Item']] = row['Valor']
+
     # Não precisamos salvar no session_state aqui se retornamos, mas mantemos a variável local.
     return despesas
 
