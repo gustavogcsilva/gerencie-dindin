@@ -1,16 +1,16 @@
 from fpdf import FPDF
 import pandas as pd
 import io
-import streamlit as st
-import safe_text
-
-
+# Importamos safe_text. O Streamlit sera importado no script principal.
+# import streamlit as st # Não precisamos importar st aqui
+import safe_text # Assumimos que esta função trata caracteres especiais
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
     Gera o PDF do relatório 50-30-20.
-    Retorna os bytes do PDF (bytestring).
+    Retorna os bytes do PDF (bytestring) prontos para download.
     """
+    # Cria o objeto PDF. O fpdf2 usa Latin-1 como padrão, bom para português.
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
@@ -135,7 +135,6 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.cell(30, 6, safe_text("Valor"), 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
-            # O uso de safe_text(item) ja garante a codificação correta
             item_safe = safe_text(item)
             
             pdf.cell(60, 6, item_safe, 1, 0, "L", 0) 
@@ -185,21 +184,21 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # SAÍDA FINAL SEGURA COM BYTES PURAS (APENAS output(dest='S'))
+    # SAÍDA FINAL CORRIGIDA: Usa output(dest='S') e verifica o tipo.
     pdf_output = pdf.output(dest='S')
-    # O fpdf2 geralmente retorna str, entao codificamos para bytes binarios
-    # Se você estiver usando fpdf2, a linha abaixo é a mais segura:
+    
+    # Se fpdf2 retorna str (comum), codificamos em latin-1 (necessário para PDFs). 
+    # Se fpdf2 retorna bytes, já está pronto.
     if isinstance(pdf_output, str):
         return pdf_output.encode('latin-1') 
     
-    # Se ja for bytes, retorna direto
     return pdf_output 
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     """
     Gera um PDF contendo o resumo da comparação histórica de meses.
-    Retorna os bytes do PDF (bytestring).
+    Retorna os bytes do PDF (bytestring) prontos para download.
     """
     pdf = FPDF()
     pdf.add_page()
@@ -226,7 +225,6 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     
     pdf.set_font("Arial", "", 9)
     for index, row in df_resumo_historico.iterrows():
-        # Usando safe_text para garantir que 'index' (nome do mês) seja string tratada
         mes = safe_text(index) 
         salario = f"R$ {row['Salário Líquido']:,.2f}"
         gasto = f"R$ {row['Total Gasto']:,.2f}"
@@ -257,11 +255,10 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-    # SAÍDA FINAL SEGURA COM BYTES PURAS (APENAS output(dest='S'))
+    # SAÍDA FINAL CORRIGIDA: Usa output(dest='S') e verifica o tipo.
     pdf_output = pdf.output(dest='S')
-    # O fpdf2 geralmente retorna str, entao codificamos para bytes binarios
+    
     if isinstance(pdf_output, str):
         return pdf_output.encode('latin-1') 
     
-    # Se ja for bytes, retorna direto
     return pdf_output
