@@ -248,17 +248,17 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
         
         pdf.set_text_color(0, 0, 0) 
         
-    pdf.ln(10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(5)
     
-    pdf.set_font("Arial", "", 8)
-    pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
-
-    # 💥 CORREÇÃO DO ERRO DE TIPO DE OBJETO ('bytearray' has no attribute 'encode')
-    pdf_output = pdf.output(dest='S')
+    # 💥 NOVA CORREÇÃO: Usando io.BytesIO para garantir um buffer binário puro
     
-    if isinstance(pdf_output, str):
-        # fpdf2 retornou string, codifica para binário
-        return pdf_output.encode('latin-1') 
+    # 1. Cria um buffer na memória
+    buffer = io.BytesIO()
     
-    # Se já é bytearray ou bytes, converte explicitamente para 'bytes' (objeto imutável)
-    return bytes(pdf_output)
+    # 2. Gera o PDF e salva DENTRO do buffer (dest='F')
+    # O encoding é implícito aqui (Latin-1)
+    pdf.output(buffer, dest='F')
+    
+    # 3. Retorna o conteúdo do buffer (bytestring pura)
+    return buffer.getvalue()
