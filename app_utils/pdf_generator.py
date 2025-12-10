@@ -1,4 +1,5 @@
-from fpdf import FPDF
+from fpdf import FPDF # <-- MANTENDO FPDF, mas assumindo que usa fpdf2 por baixo
+                      # Caso queira usar explicitamente, use: from fpdf2 import FPDF
 import pandas as pd
 import io
 # from .orcamento_class import Orcamento 
@@ -8,6 +9,8 @@ def safe_text(text):
     """
     Garanta que o objeto seja uma string (str) e o prepara para o FPDF usando latin-1,
     ignorando erros e tratando objetos binários (bytes/bytearray) de forma robusta.
+    O método .encode('latin-1').decode('latin-1') é a forma mais robusta de 
+    lidar com acentos em bibliotecas de PDF mais antigas.
     """
     # 1. Garante que a entrada é uma string (str)
     if isinstance(text, (bytes, bytearray)):
@@ -26,11 +29,12 @@ def safe_text(text):
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
-    Gera o PDF do relatório 50-30-20, usando codificação estável (latin-1).
-    Retorna os bytes do PDF (bytestring).
+    Gera o PDF do relatório 50-30-20. Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
     pdf.add_page()
+    
+    # É fundamental usar uma fonte compatível com latin-1 para acentos
     pdf.set_font("Arial", "B", 16)
     
     # --- Títulos e Informações do Usuário ---
@@ -72,9 +76,9 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         # O cálculo de divisao_quinzenal deve ser feito pelo orcamento_obj.calcular_divisao_quinzenal(limites)
         # Assumindo que o método existe e retorna o dicionário esperado
         try:
+            # Assumindo que orcamento_obj tem este método se necessário
             divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites)
         except AttributeError:
-            # Se a classe Orcamento não estiver importada, defina como vazio para evitar quebrar o PDF
             divisao_quinzenal = {} 
         
         salario_liquido_mensal = orcamento_obj.salario_liquido
@@ -216,15 +220,15 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.ln(5)
     
     # SAÍDA FINAL SEGURA COM BYTES PURAS
-    pdf_output = pdf.output(dest='S')
-    # CORREÇÃO: Garante que o retorno seja bytes, independentemente de ser str ou bytearray.
-    return bytes(pdf_output) # Se for bytearray/bytes, converte/mantém. Se for string, tentará converter (o que pode falhar se não for ASCII/Latin-1 puro)
+    # Usando dest='B' para pedir explicitamente bytes, garantindo que não há .encode()
+    pdf_output = pdf.output(dest='B')
+    return bytes(pdf_output)
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     """
     Gera um PDF contendo o resumo da comparação histórica de meses.
-    Retorna os bytes do PDF (bytestring) codificado em 'latin-1'.
+    Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
     pdf.add_page()
@@ -283,6 +287,6 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
     # SAÍDA FINAL SEGURA COM BYTES PURAS
-    pdf_output = pdf.output(dest='S')
-    # CORREÇÃO: Garante que o retorno seja bytes, independentemente de ser str ou bytearray.
+    # Usando dest='B' para pedir explicitamente bytes, garantindo que não há .encode()
+    pdf_output = pdf.output(dest='B')
     return bytes(pdf_output)
