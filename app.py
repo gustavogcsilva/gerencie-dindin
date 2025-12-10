@@ -1,35 +1,76 @@
 import streamlit as st
-import base64
-# from seu_modulo import criar_pdf_relatorio # Importe a função corrigida
+import pandas as pd
+# Importe as funções corrigidas do seu módulo
+from pdf_generator import criar_pdf_relatorio 
 
-# ... (Definição dos seus orcamento_obj, limites, totais_reais, etc.) ...
+# --- IMPORTANTE: Estrutura de Cache para garantir que o PDF seja gerado uma única vez ---
+@st.cache_data
+def get_pdf_bytes_report(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
+    """Gera o PDF e armazena o resultado em cache."""
+    return criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
 
-def exibir_pdf_na_tela(pdf_bytes):
-    """Codifica os bytes do PDF em base64 e exibe em um iframe."""
-    
-    # 1. Codifica os bytes do PDF em Base64
-    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-    
-    # 2. Cria o código HTML do iframe para incorporar o PDF
-    pdf_display = f"""
-        <iframe 
-            src="data:application/pdf;base64,{base64_pdf}" 
-            width="700" 
-            height="800" 
-            type="application/pdf"
-        ></iframe>
-    """
-    
-    # 3. Exibe o HTML no Streamlit
-    st.markdown(pdf_display, unsafe_allow_html=True)
-    
-# --- Exemplo de Uso no Streamlit ---
+# --- Exemplo de Definição de Dados (Substitua pelos seus dados reais) ---
+class MockOrcamento: # Classe fictícia para simulação
+    def __init__(self, mes, salario, fixas, lazer, poupanca):
+        self.mes = mes
+        self.salario_liquido = salario
+        self.despesas_fixas = fixas
+        self.gastos_lazer = lazer
+        self.poupanca = poupanca
 
-# 1. Gere os bytes do PDF
-pdf_data = criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
+    def calcular_divisao_quinzenal(self, limites):
+        # Simulação para o exemplo
+        return {
+            'Fixas - Início (60%)': limites.get('Necessidades (50%)', 0) * 0.6,
+            'Fixas - Meio (40%)': limites.get('Necessidades (50%)', 0) * 0.4,
+            'Lazer - Início (60%)': limites.get('Desejos/Lazer (30%)', 0) * 0.6,
+            'Lazer - Meio (40%)': limites.get('Desejos/Lazer (30%)', 0) * 0.4,
+        }
 
-st.header("Relatório Financeiro Gerado (Visualização)")
-st.caption("O PDF é exibido usando codificação Base64 no navegador.")
+# Parâmetros de exemplo
+salario = 3500.00
+orcamento_obj = MockOrcamento(
+    mes="Dezembro 2025", 
+    salario=salario,
+    fixas={'Aluguel': 1000, 'Conta de Luz': 150},
+    lazer={'Cinema': 80, 'Restaurante': 200},
+    poupanca=700
+)
 
-# 2. Exibe o PDF na tela
-exibir_pdf_na_tela(pdf_data)
+limites = {
+    'Necessidades (50%)': salario * 0.5, # 1750
+    'Desejos/Lazer (30%)': salario * 0.3, # 1050
+    'Poupança/Investimento (20%)': salario * 0.2 # 700
+}
+
+totais_reais = {
+    'total_fixas': sum(orcamento_obj.despesas_fixas.values()), # 1150
+    'total_lazer': sum(orcamento_obj.gastos_lazer.values()), # 280
+    'total_poupanca': orcamento_obj.poupanca, # 700
+    'total_gasto_real': 1150 + 280 + 700 # 2130
+}
+saldo = salario - totais_reais['total_gasto_real'] # 3500 - 2130 = 1370
+user_name = "João da Silva"
+frequencia_pagamento = "Mensal"
+
+# --- CHAMADA PRINCIPAL NO STREAMLIT ---
+st.title("Gerador de Relatórios Financeiros")
+
+if st.button("Gerar e Baixar Relatório"):
+    # 1. Obtenha os bytes do PDF (usa cache se os parâmetros forem os mesmos)
+    pdf_bytes = get_pdf_bytes_report(
+        orcamento_obj, 
+        limites, 
+        totais_reais, 
+        saldo, 
+        user_name, 
+        frequencia_pagamento
+    )
+
+    # 2. Configure o botão de download
+    st.download_button(
+        label="✅ Clique aqui para Baixar Relatório PDF",
+        data=pdf_bytes,
+        file_name=f"Relatorio_Dindin_{orcamento_obj.mes}.pdf",
+        mime="application/pdf"
+    )

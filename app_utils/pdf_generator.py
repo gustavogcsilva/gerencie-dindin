@@ -1,13 +1,16 @@
 from fpdf import FPDF
 import pandas as pd
 import io
-import safe_text # Assume-se que esta função trata caracteres especiais
+# Importamos safe_text. O Streamlit sera importado no script principal.
+# import streamlit as st # Não precisamos importar st aqui
+import safe_text # Assumimos que esta função trata caracteres especiais
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
-    Gera o PDF do relatório 50-30-20 usando um buffer de bytes.
-    Retorna os bytes do PDF (bytestring).
+    Gera o PDF do relatório 50-30-20.
+    Retorna os bytes do PDF (bytestring) prontos para download.
     """
+    # Cria o objeto PDF. O fpdf2 usa Latin-1 como padrão, bom para português.
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
@@ -49,7 +52,9 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     if frequencia_pagamento == 'Quinzenal':
         
         divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites) 
+        
         salario_liquido_mensal = orcamento_obj.salario_liquido
+        valor_recebido_quinzenal = salario_liquido_mensal / 2
         
         limite_gasto_primeira_quize = divisao_quinzenal['Fixas - Início (60%)'] + divisao_quinzenal['Lazer - Início (60%)']
         limite_gasto_segunda_quize = divisao_quinzenal['Fixas - Meio (40%)'] + divisao_quinzenal['Lazer - Meio (40%)']
@@ -68,7 +73,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.set_font("Arial", "B", 10)
         pdf.cell(95, 6, safe_text("Valor Recebido por Quinzena:"), 1, 0, "L")
         pdf.set_font("Arial", "", 10)
-        pdf.cell(95, 6, f"R$ {salario_liquido_mensal / 2:,.2f}", 1, 1, "R")
+        pdf.cell(95, 6, f"R$ {valor_recebido_quinzenal:,.2f}", 1, 1, "R")
         
         pdf.ln(2)
         
@@ -179,16 +184,21 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # 💥 SAÍDA CORRIGIDA (io.BytesIO)
-    buffer = io.BytesIO()
-    pdf.output(buffer, dest='F')
-    return buffer.getvalue() 
+    # SAÍDA FINAL CORRIGIDA: Usa output(dest='S') e verifica o tipo.
+    pdf_output = pdf.output(dest='S')
+    
+    # Se fpdf2 retorna str (comum), codificamos em latin-1 (necessário para PDFs). 
+    # Se fpdf2 retorna bytes, já está pronto.
+    if isinstance(pdf_output, str):
+        return pdf_output.encode('latin-1') 
+    
+    return pdf_output 
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     """
     Gera um PDF contendo o resumo da comparação histórica de meses.
-    Retorna os bytes do PDF (bytestring).
+    Retorna os bytes do PDF (bytestring) prontos para download.
     """
     pdf = FPDF()
     pdf.add_page()
@@ -240,13 +250,15 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
         
         pdf.set_text_color(0, 0, 0) 
         
-    pdf.set_text_color(0, 0, 0) 
-    pdf.ln(5)
+    pdf.ln(10)
     
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-    # 💥 SAÍDA CORRIGIDA (io.BytesIO)
-    buffer = io.BytesIO()
-    pdf.output(buffer, dest='F')
-    return buffer.getvalue()
+    # SAÍDA FINAL CORRIGIDA: Usa output(dest='S') e verifica o tipo.
+    pdf_output = pdf.output(dest='S')
+    
+    if isinstance(pdf_output, str):
+        return pdf_output.encode('latin-1') 
+    
+    return pdf_output
