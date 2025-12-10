@@ -1,13 +1,12 @@
 from fpdf import FPDF
 import pandas as pd
 import io
-# import streamlit as st # Streamlit será importado no script principal
 import safe_text # Assume-se que esta função trata caracteres especiais
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """
-    Gera o PDF do relatório 50-30-20.
-    Retorna os bytes do PDF (bytestring) prontos para download.
+    Gera o PDF do relatório 50-30-20 usando um buffer de bytes.
+    Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
     pdf.add_page()
@@ -50,9 +49,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     if frequencia_pagamento == 'Quinzenal':
         
         divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites) 
-        
         salario_liquido_mensal = orcamento_obj.salario_liquido
-        # Removendo cálculo redundante, assumindo que orcamento_obj.calcular_divisao_quinzenal está correto
         
         limite_gasto_primeira_quize = divisao_quinzenal['Fixas - Início (60%)'] + divisao_quinzenal['Lazer - Início (60%)']
         limite_gasto_segunda_quize = divisao_quinzenal['Fixas - Meio (40%)'] + divisao_quinzenal['Lazer - Meio (40%)']
@@ -182,21 +179,16 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # 💥 CORREÇÃO DO ERRO DE TIPO DE OBJETO ('bytearray' has no attribute 'encode')
-    pdf_output = pdf.output(dest='S')
-    
-    if isinstance(pdf_output, str):
-        # fpdf2 retornou string, codifica para binário
-        return pdf_output.encode('latin-1') 
-    
-    # Se já é bytearray ou bytes, converte explicitamente para 'bytes' (objeto imutável)
-    return bytes(pdf_output) 
+    # 💥 SAÍDA CORRIGIDA (io.BytesIO)
+    buffer = io.BytesIO()
+    pdf.output(buffer, dest='F')
+    return buffer.getvalue() 
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     """
     Gera um PDF contendo o resumo da comparação histórica de meses.
-    Retorna os bytes do PDF (bytestring) prontos para download.
+    Retorna os bytes do PDF (bytestring).
     """
     pdf = FPDF()
     pdf.add_page()
@@ -248,17 +240,13 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
         
         pdf.set_text_color(0, 0, 0) 
         
-    pdf.set_text_color(0, 0, 0)
+    pdf.set_text_color(0, 0, 0) 
     pdf.ln(5)
     
-    # 💥 NOVA CORREÇÃO: Usando io.BytesIO para garantir um buffer binário puro
-    
-    # 1. Cria um buffer na memória
+    pdf.set_font("Arial", "", 8)
+    pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
+
+    # 💥 SAÍDA CORRIGIDA (io.BytesIO)
     buffer = io.BytesIO()
-    
-    # 2. Gera o PDF e salva DENTRO do buffer (dest='F')
-    # O encoding é implícito aqui (Latin-1)
     pdf.output(buffer, dest='F')
-    
-    # 3. Retorna o conteúdo do buffer (bytestring pura)
     return buffer.getvalue()

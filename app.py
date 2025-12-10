@@ -1,49 +1,35 @@
 import streamlit as st
-# from docx_generator import criar_docx_relatorio # Importe a nova função DOCX
-# from pdf_generator import criar_pdf_relatorio  # Mantenha sua função de PDF
+import base64
+# from seu_modulo import criar_pdf_relatorio # Importe a função corrigida
 
-# [Definições de MockOrcamento, limites, totais_reais, etc. - como no exemplo anterior]
+# ... (Definição dos seus orcamento_obj, limites, totais_reais, etc.) ...
 
-# --- Funções de Cache (CRUCIAIS para Streamlit) ---
+def exibir_pdf_na_tela(pdf_bytes):
+    """Codifica os bytes do PDF em base64 e exibe em um iframe."""
+    
+    # 1. Codifica os bytes do PDF em Base64
+    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+    
+    # 2. Cria o código HTML do iframe para incorporar o PDF
+    pdf_display = f"""
+        <iframe 
+            src="data:application/pdf;base64,{base64_pdf}" 
+            width="700" 
+            height="800" 
+            type="application/pdf"
+        ></iframe>
+    """
+    
+    # 3. Exibe o HTML no Streamlit
+    st.markdown(pdf_display, unsafe_allow_html=True)
+    
+# --- Exemplo de Uso no Streamlit ---
 
-@st.cache_data
-def get_docx_bytes_report(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
-    """Gera o DOCX e armazena o resultado em cache."""
-    # Substitua esta chamada pela sua função DOCX
-    return criar_docx_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
+# 1. Gere os bytes do PDF
+pdf_data = criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
 
-# Se você quiser o PDF, use esta função:
-@st.cache_data
-def get_pdf_bytes_report(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
-    """Gera o PDF e armazena o resultado em cache."""
-    return criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
+st.header("Relatório Financeiro Gerado (Visualização)")
+st.caption("O PDF é exibido usando codificação Base64 no navegador.")
 
-
-# --- CHAMADA PRINCIPAL NO STREAMLIT ---
-st.title("Gerador de Relatórios Financeiros")
-
-# --- Opção 1: Download DOCX (Word) ---
-docx_bytes = get_docx_bytes_report(
-    orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento
-)
-
-st.download_button(
-    label="⬇️ Baixar Relatório DOCX (Word)",
-    data=docx_bytes,
-    file_name=f"Relatorio_Dindin_{orcamento_obj.mes}.docx",
-    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
-
-st.warning("⚠️ **ATENÇÃO:** A conversão de DOCX para PDF precisa de software externo. Baixe o DOCX e use o Word/LibreOffice para salvar como PDF manualmente.")
-
-# --- Opção 2: Download PDF (Usando seu código original, que é mais fácil) ---
-pdf_bytes = get_pdf_bytes_report(
-    orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento
-)
-
-st.download_button(
-    label="✅ Baixar Relatório PDF (Recomendado)",
-    data=pdf_bytes,
-    file_name=f"Relatorio_Dindin_{orcamento_obj.mes}.pdf",
-    mime="application/pdf"
-)
+# 2. Exibe o PDF na tela
+exibir_pdf_na_tela(pdf_data)
