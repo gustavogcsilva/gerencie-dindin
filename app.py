@@ -5,14 +5,19 @@ import pandas as pd
 from utils.pdf_generator import criar_pdf_relatorio
 
 # --- IMPORTANTE: Estrutura de Cache para garantir que o PDF seja gerado uma única vez ---
-@st.cache_data(show_spinner=False) # Adicionado show_spinner=False para um UI mais limpa
-def get_pdf_bytes_report(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
-    """Gera o PDF e armazena o resultado em cache."""
-    # A função criar_pdf_relatorio deve retornar os bytes puros do PDF (bytestring)
-    return criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
+@st.cache_data(show_spinner=False) 
+# CORREÇÃO: Usamos o prefixo '_' em '_orcamento_obj' para que o Streamlit ignore 
+# o hashing desta classe customizada e evite o erro de cache.
+def get_pdf_bytes_report(_orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
+    """
+    Gera o PDF e armazena o resultado em cache.
+    O prefixo '_' impede o erro de hashing de classe customizada.
+    """
+    # Passamos o argumento com underscore para a função externa.
+    return criar_pdf_relatorio(_orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
 
 # --- Exemplo de Definição de Dados (Substitua pelos seus dados reais) ---
-class Orcamento: # Nome renomeado de MockOrcamento para Orcamento
+class Orcamento:
     def __init__(self, mes, salario, fixas, lazer, poupanca):
         self.mes = mes
         self.salario_liquido = salario
@@ -60,10 +65,10 @@ frequencia_pagamento = "Mensal"
 st.title("Gerador de Relatórios Financeiros 📊")
 
 # 1. Geração Otimizada: Obtenha os bytes do PDF (usa cache e é executado na inicialização)
-# O st.cache_data garante que esta função seja chamada apenas quando os parâmetros mudam.
 try:
     with st.spinner('Gerando o relatório...'):
         pdf_bytes = get_pdf_bytes_report(
+            # Aqui, passamos o objeto 'orcamento_obj' que será mapeado para o parâmetro '_orcamento_obj'
             orcamento_obj, 
             limites, 
             totais_reais, 
@@ -73,8 +78,6 @@ try:
         )
 
     # 2. Configuração do botão de download (IMEDIATA)
-    # Este botão é renderizado diretamente e usa os bytes pré-calculados.
-    # O st.download_button não precisa ser ativado por outro botão; ele é sempre "ativo".
     st.download_button(
         label="✅ Baixar Relatório PDF",
         data=pdf_bytes,
