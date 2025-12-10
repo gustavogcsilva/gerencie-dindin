@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from app_utils.state_manager import logout, salvar_orcamento_atual, atualizar_orcamento_do_selectbox, adicionar_gasto
 from app_utils.orcamento_class import Orcamento
-from app_utils.pdf_generator import criar_pdf_relatorio, criar_pdf_relatorio_historico
+from utils.pdf_generator import criar_pdf_relatorio, criar_pdf_relatorio_historico
 from .dashboard_view import criar_dashboard_historico
 
 def MainAppView():

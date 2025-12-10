@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 # Certifique-se de que 'pdf_generator' está acessível no PYTHONPATH
 # e que a função criar_pdf_relatorio está dentro dele.
-from pdf_generator import criar_pdf_relatorio 
+from utils.pdf_generator import criar_pdf_relatorio
 
 # --- IMPORTANTE: Estrutura de Cache para garantir que o PDF seja gerado uma única vez ---
 @st.cache_data(show_spinner=False) # Adicionado show_spinner=False para um UI mais limpa
