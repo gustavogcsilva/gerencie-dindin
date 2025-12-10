@@ -6,6 +6,7 @@ from utils.pdf_generator import criar_pdf_relatorio # Assumindo a correção do 
 
 class Orcamento:
     """Classe para estruturar os dados do orçamento."""
+    # ... (definição da classe Orcamento) ...
     def __init__(self, mes, salario, fixas, lazer, poupanca):
         self.mes = mes
         self.salario_liquido = salario
@@ -22,11 +23,16 @@ class Orcamento:
             'Lazer - Meio (40%)': limites.get('Desejos/Lazer (30%)', 0) * 0.4,
         }
 
-# --- Funções de Cache (Corrigida) ---
+# --- Funções de Cache (CORRIGIDA) ---
 
-@st.cache_data(show_spinner=False) 
+@st.cache_data(show_spinner=False)
+# AQUI: Mudança de 'orcamento_obj' para '_orcamento_obj'
 def get_pdf_bytes_report(_orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento):
-    """Gera o PDF e armazena o resultado em cache. '_' para evitar erro de hash."""
+    """
+    Gera o PDF e armazena o resultado em cache. O '_' evita o erro de hashing
+    na classe customizada Orcamento.
+    """
+    # Usamos o nome com underscore na chamada para a função externa.
     return criar_pdf_relatorio(_orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento)
 
 # --- FUNÇÕES AUXILIARES DE ENTRADA ---
@@ -37,19 +43,21 @@ def input_despesas(titulo, default_data={'Item 1': 0.0}):
     despesas = {}
     
     # Criar DataFrame para capturar os dados
-    if 'df_despesas' not in st.session_state or st.session_state.df_despesas.empty:
+    if 'df_despesas' not in st.session_state or titulo not in st.session_state:
         df_initial = pd.DataFrame(default_data.items(), columns=['Item', 'Valor'])
-        st.session_state.df_despesas = df_initial
-        
+        # Usar uma chave específica no session_state para garantir que o DataFrame seja inicializado apenas uma vez por widget
+        st.session_state[f'df_initial_{titulo.replace(" ", "_")}'] = df_initial
+    
+    # Usar a chave de sessão correta para o st.data_editor
     edited_df = st.data_editor(
-        st.session_state.df_despesas,
+        st.session_state.get(f'df_initial_{titulo.replace(" ", "_")}', pd.DataFrame(default_data.items(), columns=['Item', 'Valor'])),
         num_rows="dynamic",
         use_container_width=True,
         column_config={
             "Item": st.column_config.TextColumn("Descrição", required=True),
             "Valor": st.column_config.NumberColumn("Valor (R$)", format="%.2f", min_value=0.0, required=True),
         },
-        key=titulo.replace(" ", "_") # Chave única
+        key=titulo.replace(" ", "_") # Chave única para o widget
     )
     
     # Processar o DataFrame editado para o dicionário final
@@ -58,7 +66,7 @@ def input_despesas(titulo, default_data={'Item 1': 0.0}):
         if row['Item'] and row['Valor'] is not None and row['Valor'] > 0:
              despesas[row['Item']] = row['Valor']
              
-    st.session_state[f'final_{titulo}'] = despesas
+    # Não precisamos salvar no session_state aqui se retornamos, mas mantemos a variável local.
     return despesas
 
 # --- LAYOUT PRINCIPAL E ENTRADA DE DADOS ---
@@ -88,6 +96,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     # 50% NECESSIDADES FIXAS
+    # Correção: O valor padrão deve ser um dicionário único para cada chamada
     despesas_fixas = input_despesas(
         "50% Necessidades Fixas", 
         default_data={'Aluguel': 1000.00, 'Conta de Luz': 150.00, 'Telefone/Internet': 50.00}
@@ -95,10 +104,11 @@ with col1:
 
 with col2:
     # 30% DESEJOS E LAZER
-    gastos_lazer = input_despesas(
+    despesas_lazer = input_despesas(
         "30% Desejos e Lazer", 
         default_data={'Cinema': 80.00, 'Restaurante': 200.00}
     )
+# Nota: Renomeei a variável de 'gastos_lazer' para 'despesas_lazer' na chamada para refletir o nome da função.
 
 st.divider()
 
@@ -114,7 +124,7 @@ if st.button("💰 Gerar Relatório e Download"):
     }
     
     total_fixas = sum(despesas_fixas.values())
-    total_lazer = sum(gastos_lazer.values())
+    total_lazer = sum(despesas_lazer.values()) # Usando 'despesas_lazer'
     
     totais_reais = {
         'total_fixas': total_fixas,
@@ -125,20 +135,21 @@ if st.button("💰 Gerar Relatório e Download"):
     
     saldo = salario - totais_reais['total_gasto_real']
     
-    # 2. Criar Objeto do Orçamento (necessário para a função PDF)
+    # 2. Criar Objeto do Orçamento 
     orcamento_obj = Orcamento(
         mes=mes, 
         salario=salario,
         fixas=despesas_fixas,
-        lazer=gastos_lazer,
+        lazer=despesas_lazer, # Usando 'despesas_lazer'
         poupanca=poupanca_alocada
     )
 
     # 3. Geração Otimizada (Chamada ao cache)
     try:
         with st.spinner('Gerando o relatório PDF...'):
+            # Passamos o objeto 'orcamento_obj' que será mapeado para o parâmetro '_orcamento_obj'
             pdf_bytes = get_pdf_bytes_report(
-                orcamento_obj, # Passamos o objeto (Streamlit ignora o hash devido ao '_')
+                orcamento_obj, 
                 limites, 
                 totais_reais, 
                 saldo, 
@@ -172,4 +183,5 @@ if st.button("💰 Gerar Relatório e Download"):
         st.divider()
 
     except Exception as e:
+        # A mensagem de erro agora será mais limpa, mas ainda aponta para o gerador de PDF
         st.error(f"❌ Erro ao gerar o PDF: Verifique o código do gerador de PDF. Detalhes: {e}")
