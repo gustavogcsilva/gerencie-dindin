@@ -74,13 +74,13 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         try:
             divisao_quinzenal = orcamento_obj.calcular_divisao_quinzenal(limites)
         except AttributeError:
-            # Caso a classe Orcamento não esteja disponível (comentada no import)
+            # Se a classe Orcamento não estiver importada, defina como vazio para evitar quebrar o PDF
             divisao_quinzenal = {} 
         
         salario_liquido_mensal = orcamento_obj.salario_liquido
         valor_recebido_quinzenal = salario_liquido_mensal / 2
         
-        # Ajuste para caso divisao_quinzenal não tenha sido calculada
+        # Obtendo valores com 'get' para evitar KeyError
         limite_gasto_primeira_quize = divisao_quinzenal.get('Fixas - Início (60%)', 0.0) + divisao_quinzenal.get('Lazer - Início (60%)', 0.0)
         limite_gasto_segunda_quize = divisao_quinzenal.get('Fixas - Meio (40%)', 0.0) + divisao_quinzenal.get('Lazer - Meio (40%)', 0.0)
         
@@ -136,7 +136,7 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         
         pdf.set_font("Arial", "", 10)
         
-        # Ajuste para caso divisao_quinzenal não tenha sido calculada
+        # Obtendo valores com 'get' para evitar KeyError
         fixas_inicio = divisao_quinzenal.get('Fixas - Início (60%)', 0.0)
         fixas_meio = divisao_quinzenal.get('Fixas - Meio (40%)', 0.0)
         lazer_inicio = divisao_quinzenal.get('Lazer - Início (60%)', 0.0)
@@ -166,7 +166,6 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
         pdf.cell(30, 6, safe_text("Valor"), 1, 1, "R", 0)
         
         for item, valor in sorted(despesas.items()):
-            # A correção do erro está aqui: o tratamento de codificação é feito pela safe_text
             item_safe = safe_text(item)
             
             pdf.cell(60, 6, item_safe, 1, 0, "L", 0) 
@@ -216,14 +215,10 @@ def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, 
     pdf.set_text_color(0, 0, 0)
     pdf.ln(5)
     
-    # SAÍDA FINAL SEGURA
-    pdf_output = pdf.output(dest='S') # dest='S' ou 'B'
-    
-    # CORREÇÃO PRINCIPAL: Garante que o retorno seja bytes sem tentar re-encode em objeto binário
-    if isinstance(pdf_output, (bytes, bytearray)):
-        return bytes(pdf_output) # Retorna bytes
-    else:
-        return pdf_output.encode('latin-1') # Se for string (caso improvável na versão moderna), codifica
+    # SAÍDA FINAL SEGURA COM BYTES PURAS
+    pdf_output = pdf.output(dest='S')
+    # CORREÇÃO: Garante que o retorno seja bytes, independentemente de ser str ou bytearray.
+    return bytes(pdf_output) # Se for bytearray/bytes, converte/mantém. Se for string, tentará converter (o que pode falhar se não for ASCII/Latin-1 puro)
 
 
 def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
@@ -287,11 +282,7 @@ def criar_pdf_relatorio_historico(df_resumo_historico) -> bytes:
     pdf.set_font("Arial", "", 8)
     pdf.multi_cell(0, 4, safe_text("Nota: Valores positivos em 'Folga' indicam que voce gastou menos que o limite sugerido (economia). Valores negativos indicam deficit (ultrapassagem)."), 0, "L")
 
-    # SAÍDA FINAL SEGURA
+    # SAÍDA FINAL SEGURA COM BYTES PURAS
     pdf_output = pdf.output(dest='S')
-    
-    # CORREÇÃO PRINCIPAL: Garante que o retorno seja bytes sem tentar re-encode em objeto binário
-    if isinstance(pdf_output, (bytes, bytearray)):
-        return bytes(pdf_output) # Retorna bytes
-    else:
-        return pdf_output.encode('latin-1') # Se for string, codifica
+    # CORREÇÃO: Garante que o retorno seja bytes, independentemente de ser str ou bytearray.
+    return bytes(pdf_output)
