@@ -184,4 +184,4 @@ if st.button("💰 Gerar Relatório e Download"):
 
     except Exception as e:
         # A mensagem de erro agora será mais limpa, mas ainda aponta para o gerador de PDF
-        st.error(f"❌ Erro ao gerar o PDF: Verifique o código do gerador de PDF. Detalhes: {e}")
+        st.error(f" Erro ao gerar o PDF: Verifique o código do gerador de PDF. Detalhes: {e}")
