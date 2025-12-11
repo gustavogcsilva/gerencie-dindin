@@ -1,25 +1,13 @@
 from fpdf import FPDF
-# Nota: Para melhor suporte a UTF-8 (acentos), fpdf2 é recomendado.
-# Se estiver usando fpdf, a linha 'import safe_text' É NECESSÁRIA.
 
 import pandas as pd
 import io
 
-# -----------------------------------------------------------
-# Se você NÃO CONSEGUE instalar 'safe_text' e precisa de uma função simples:
-# def safe_text(text):
-#     """Substitui caracteres acentuados/especiais se a fonte não for Unicode."""
-#     import unidecode
-#     return unidecode.unidecode(text)
-# -----------------------------------------------------------
 
-
-# Mantenha o módulo safe_text se for um módulo interno necessário
 try:
     import safe_text
 except ImportError:
-    # Se safe_text for um módulo interno que está faltando, 
-    # você pode colocar uma função dummy para não quebrar a aplicação imediatamente
+
     def safe_text(text):
         return text 
     print("Aviso: Módulo safe_text não encontrado. Usando função dummy.")

@@ -71,14 +71,15 @@ def input_despesas(titulo, default_data={'Item 1': 0.0}):
 
 # --- LAYOUT PRINCIPAL E ENTRADA DE DADOS ---
 
-st.title("Gerencie Dindin: Orçamento 50-30-20 Dinâmico 💰")
+st.title("Gerenciamento de Dividas: 💰")
+st.subheader("Finalidade em ajudar com despesas e prever o que pode ser gasto.", divider="gray")
 
 # --- BARRA LATERAL PARA ENTRADA DE DADOS ---
 with st.sidebar:
     st.header("⚙️ Configurações do Orçamento")
     
     # Dados básicos
-    user_name = st.text_input("Seu Nome:", "Usuário Teste")
+    user_name = st.text_input("Seu Nome:", "Digite o nome")
     mes = st.text_input("Mês/Ano do Relatório:", "Dezembro 2025")
     salario = st.number_input("Salário Líquido Total (R$):", min_value=0.0, value=3500.00, step=100.00)
     frequencia_pagamento = st.selectbox("Frequência de Pagamento:", ["Mensal", "Quinzenal"])
