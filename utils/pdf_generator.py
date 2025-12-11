@@ -17,7 +17,6 @@ def _configurar_pdf(pdf: FPDF, title: str, user_name: str, frequencia_pagamento:
     """Configura o cabeçalho inicial do PDF."""
     pdf.add_page()
     
-    # Define a fonte para uma que suporte português (Se FPDF2 estiver em uso, Arial pode funcionar)
     pdf.set_font("Arial", "B", 16)
     
     pdf.cell(0, 10, safe_text(title), 0, 1, "C")
@@ -71,17 +70,15 @@ def _saida_pdf_segura(pdf: FPDF) -> bytes:
     pdf_output = pdf.output(dest='S')
     
     if isinstance(pdf_output, str):
-        # FPDF/fpdf2 em modo 'S' pode retornar str (latin-1), precisa de encode
         return pdf_output.encode('latin-1') 
-    
-    # Garante que seja bytes, caso o fpdf retorne diretamente bytes
+
     return bytes(pdf_output) if isinstance(pdf_output, (bytes, bytearray)) else b''
 
 
 def criar_pdf_relatorio(orcamento_obj, limites, totais_reais, saldo, user_name, frequencia_pagamento) -> bytes:
     """Gera o PDF do relatório 50-30-20."""
     pdf = FPDF()
-    _configurar_pdf(pdf, f"Gerencie Dindin: Relatório {orcamento_obj.mes}", user_name, frequencia_pagamento)
+    _configurar_pdf(pdf, f"Gerenciamento de Valores: Relatório {orcamento_obj.mes}", user_name, frequencia_pagamento)
 
     # --- Resumo Geral e Saldo ---
     # ... (Bloco de Resumo Geral e Saldo idêntico ao original, apenas com safe_text mantido/ajustado) ...
