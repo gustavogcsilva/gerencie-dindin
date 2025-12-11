@@ -81,14 +81,14 @@ with st.sidebar:
     # Dados básicos
     user_name = st.text_input("Seu Nome:", "Digite o nome")
     mes = st.text_input("Mês/Ano do Relatório:", "Dezembro 2025")
-    salario = st.number_input("Salário Líquido Total (R$):", min_value=0.0, value=3500.00, step=100.00)
+    salario = st.number_input("Salário Líquido Total (R$):", min_value=0.0, value=00.00, step=100.00)
     frequencia_pagamento = st.selectbox("Frequência de Pagamento:", ["Mensal", "Quinzenal"])
     
     # 20% Poupança/Investimento
-    poupanca_alocada = st.number_input("Valor Alocado em Poupança/Investimento (R$):", min_value=0.0, value=700.00, step=50.00)
+    poupanca_alocada = st.number_input("Valor Alocado em Poupança/Investimento (R$):", min_value=0.0, value=00.00, step=50.00)
 
     st.subheader("Entrada de Despesas (50% e 30%)")
-    st.markdown("Use as tabelas para adicionar ou remover itens.")
+    st.markdown("Digite os valores nas tabelas.")
 
 # --- ENTRADA DE DESPESAS USANDO st.data_editor ---
 st.subheader("Dados de Entrada ✏️")
@@ -100,14 +100,14 @@ with col1:
     # Correção: O valor padrão deve ser um dicionário único para cada chamada
     despesas_fixas = input_despesas(
         "50% Necessidades Fixas", 
-        default_data={'Aluguel': 1000.00, 'Conta de Luz': 150.00, 'Telefone/Internet': 50.00}
+        default_data={'Aluguel': 0.00, 'Conta de Luz': 0.00, 'Telefone/Internet': 0.00, 'Cartões de Crédito': 0.00, 'Dividas (Terceiros)': 0.00, 'Seguro': 0.00}
     )
 
 with col2:
     # 30% DESEJOS E LAZER
     despesas_lazer = input_despesas(
         "30% Desejos e Lazer", 
-        default_data={'Cinema': 80.00, 'Restaurante': 200.00}
+        default_data={'Cinema/Teatro': 0.00, 'Fast/Food-Restaurantes': 0.00}
     )
 # Nota: Renomeei a variável de 'gastos_lazer' para 'despesas_lazer' na chamada para refletir o nome da função.
 
