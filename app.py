@@ -85,7 +85,7 @@ with st.sidebar:
     frequencia_pagamento = st.selectbox("Frequência de Pagamento:", ["Mensal", "Quinzenal"])
     
     # 20% Poupança/Investimento
-    poupanca_alocada = st.number_input("Valor Alocado em Poupança/Investimento (R$):", min_value=0.0, value=00.00, step=50.00)
+    poupanca_alocada = st.number_input("Valor Alocado em Poupança/Investimento - Minimo de 20% (R$):", min_value=0.0, value=00.00, step=50.00)
 
     st.subheader("Entrada de Despesas (50% e 30%)")
     st.markdown("Digite os valores nas tabelas.")
